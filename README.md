@@ -1,2 +1,2 @@
 # super-poker-server
-Websocket server for super-poker
+WebSocket server for super-poker
