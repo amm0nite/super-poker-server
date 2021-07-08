@@ -121,6 +121,7 @@ export class Server {
         const room = new Room(name);
         this.rooms.push(room);
         this.checkRoom(name);
+        return room;
     }
 
     findRoom(name) {
@@ -132,11 +133,15 @@ export class Server {
     }
 
     checkRoom(name) {
+        const room = this.findRoom(name);
+        if (!room) {
+            return;
+        }
         if (room.isOld()) {
             this.deleteRoom(name);
             return;
         }
-        this.checkRoomTimeout = setTimeout(() => this.checkRoom(room), ROOM_CHECK);
+        this.checkRoomTimeout = setTimeout(() => this.checkRoom(name), ROOM_CHECK);
     }
 
     pingEveryone() {

@@ -8,25 +8,37 @@ describe('server', function() {
     const address = 'ws://127.0.0.1:' + server.port;
     server.start();
 
-    it('should be able to connect', async function() {
+    it('should be able to connect', function(done) {
         const ws = new WebSocket(address);
-        return new Promise((resolve, reject) => {
-            ws.on('open', () => {
-                return resolve();
-            });
+        ws.on('open', () => {
+            return done();
         });
     });
 
-    it('should send a welcome message', async function() {
+    it('should send a welcome message', function(done) {
         const expected = { message: 'welcome' };
         const ws = new WebSocket(address);
-        return new Promise((resolve, reject) => {
-            ws.on('message', (content) => {
-                if (content === JSON.stringify(expected)) {
-                    return resolve();
-                }
-                return reject();
-            });
+        ws.on('message', (content) => {
+            if (content === JSON.stringify(expected)) {
+                return done();
+            }
+            return done(new Error('wrong welcome message'));
+        });
+    });
+
+    it('should do room selection', function(done) {
+        const type = 'room';
+        const room = 'home';
+        const expected = { type, room };
+        const ws = new WebSocket(address);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({ type, room }));
+        });
+        ws.on('message', (content) => {
+            console.log(content);
+            if (content === JSON.stringify(expected)) {
+                return done();
+            }
         });
     });
 
