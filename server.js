@@ -16,6 +16,7 @@ class Client {
 class Room {
     constructor(name) {
         this.name = name;
+        this.timeout = null;
         this.refresh();
     }
 
@@ -32,10 +33,9 @@ class Room {
 export class Server {
     constructor() {
         this.port = 8080;
-        this.rooms = [];
+        this.rooms = new Map();
 
         this.pingInterval = null;
-        this.checkRoomTimeout = null;
     }
 
     start() {
@@ -76,7 +76,7 @@ export class Server {
     }
 
     sendToRoom(name, message) {
-        const room = this.findRoom(name);
+        const room = this.rooms.get(name);
         if (!room) {
             return;
         }
@@ -97,17 +97,17 @@ export class Server {
     }
 
     handleTalk(ws, message) {
-        if (!message.room) {
+        if (!ws.client.room) {
             return;
         }
 
         message.author = ws.client.uuid;
-        this.sendToRoom(room, message);
+        this.sendToRoom(ws.client.room, message);
     }
 
     handleRoom(ws, message) {
         const name = message.room;
-        let room = this.findRoom(name);
+        let room = this.rooms.get(name);
         if (!room) {
             room = this.createRoom(name);
             room.owner = ws.client.uuid;
@@ -119,21 +119,23 @@ export class Server {
 
     createRoom(name) {
         const room = new Room(name);
-        this.rooms.push(room);
+        this.rooms.set(name, room);
         this.checkRoom(name);
         return room;
     }
 
-    findRoom(name) {
-        return this.rooms.find((room) => room.name === name);
-    }
-
     deleteRoom(name) {
-        this.rooms = this.rooms.filter((room) => room.name !== name);
+        const room = this.rooms.get(name);
+        if (!room) {
+            return;
+        }
+
+        clearTimeout(room.timeout);
+        this.rooms.delete(name);
     }
 
     checkRoom(name) {
-        const room = this.findRoom(name);
+        const room = this.rooms.get(name);
         if (!room) {
             return;
         }
@@ -141,24 +143,29 @@ export class Server {
             this.deleteRoom(name);
             return;
         }
-        this.checkRoomTimeout = setTimeout(() => this.checkRoom(name), ROOM_CHECK);
+        room.timeout = setTimeout(() => this.checkRoom(name), ROOM_CHECK);
     }
 
     pingEveryone() {
         this.wss.clients.forEach((ws) => {
-            if (!ws.client.alive) {
-                ws.terminate();
-                return;
-            }
+            setImmediate(() => {
+                if (!ws.client.alive) {
+                    ws.terminate();
+                    return;
+                }
 
-            ws.client.alive = false;
-            ws.ping();
+                ws.client.alive = false;
+                ws.ping();
+            });
         });
     }
 
     stop() {
+        for (const room of this.rooms.values()) {
+            this.deleteRoom(room.name);
+        }
+
         clearInterval(this.pingInterval);
-        clearTimeout(this.checkRoomTimeout);
         this.wss.close();
     }
 }

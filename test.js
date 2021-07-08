@@ -35,8 +35,51 @@ describe('server', function() {
             ws.send(JSON.stringify({ type, room }));
         });
         ws.on('message', (content) => {
-            console.log(content);
             if (content === JSON.stringify(expected)) {
+                return done();
+            }
+        });
+    });
+
+    it('should do room broadcast', function(done) {
+        const alice = new WebSocket(address);
+        const bob = new WebSocket(address);
+
+        const enterRoomMessage = JSON.stringify({ type: 'room', room: 'test' });
+        const enteredRoomMessage = JSON.stringify({ type: 'room', room: 'test' });
+
+        const aliceMessage = 'hello bob';
+        const aliceTalkMessage = JSON.stringify({ type: 'talk', message: aliceMessage });
+
+        alice.on('open', () => {
+            alice.send(enterRoomMessage);
+        });
+        bob.on('open', () => {
+            bob.send(enterRoomMessage);
+        });
+
+        let aliceInRoom = false;
+        let bobInRoom = false;
+
+        const onEnter = () => {
+            if (aliceInRoom && bobInRoom) {
+                alice.send(aliceTalkMessage);
+            }
+        }
+
+        alice.on('message', (content) => {
+            if (content === enteredRoomMessage) {
+                aliceInRoom = true;
+                return onEnter();
+            }
+        });
+        bob.on('message', (content) => {
+            if (content === enteredRoomMessage) {
+                bobInRoom = true;
+                return onEnter();
+            }
+            const data = JSON.parse(content);
+            if (data.type === 'talk' && data.message === aliceMessage) {
                 return done();
             }
         });
