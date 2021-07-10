@@ -8,6 +8,9 @@ RUN npm ci --only=production
 
 COPY . .
 
+RUN useradd superpoker
+USER superpoker
+
 EXPOSE 8080
 
-CMD [ "npm", "start" ]
+CMD [ "node", "index.js" ]
