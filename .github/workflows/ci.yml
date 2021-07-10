@@ -21,7 +21,7 @@ jobs:
     - run: npm test
 
   docker:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs: check
     runs-on: ubuntu-latest
 
