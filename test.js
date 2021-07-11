@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 import WebSocket from 'ws';
 import { Server } from './server.js';
 
@@ -75,7 +77,7 @@ describe('server', function() {
             if (aliceInRoom && bobInRoom) {
                 alice.send(aliceTalkMessage);
             }
-        }
+        };
 
         alice.on('message', (content) => {
             if (content === enteredRoomMessage) {

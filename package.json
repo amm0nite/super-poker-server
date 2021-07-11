@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
+    "eslint": "eslint *.js",
     "test": "mocha test.js"
   },
   "repository": {
@@ -25,6 +26,7 @@
     "node": ">=16"
   },
   "devDependencies": {
+    "eslint": "^7.30.0",
     "mocha": "^9.0.1"
   }
 }
