@@ -14,8 +14,11 @@ class Client {
 }
 
 class Room {
-    constructor(name) {
+    constructor(name, owner, meta) {
         this.name = name;
+        this.owner = owner;
+        this.meta = meta;
+
         this.timeout = null;
         this.refresh();
     }
@@ -57,11 +60,14 @@ export class Server {
     onMessage(ws, content) {
         try {
             const message = JSON.parse(content);
-            if (message.type === 'room') {
-                this.handleRoom(ws, message);
-            }
             if (message.type === 'talk') {
-                this.handleTalk(ws, message);
+                return this.handleTalk(ws, message);
+            }
+            if (message.type === 'check') {
+                return this.handleCheck(ws, message);
+            }
+            if (message.type === 'room') {
+                return this.handleRoom(ws, message);
             }
         } catch (err) {
             console.log(err);
@@ -109,16 +115,34 @@ export class Server {
         const name = message.room;
         let room = this.rooms.get(name);
         if (!room) {
-            room = this.createRoom(name);
-            room.owner = ws.client.uuid;
+            room = this.createRoom(name, ws.client.uuid, message.meta);
         }
 
         ws.client.room = message.room;
-        this.send(ws, { type: 'room', room: room.name });
+        const response = {
+            type: 'room',
+            room: room.name,
+            meta: room.meta,
+        };
+
+        this.send(ws, response);
     }
 
-    createRoom(name) {
-        const room = new Room(name);
+    handleCheck(ws, message) {
+        const name = message.room;
+        let room = this.rooms.get(name);
+
+        const response = { type: 'check', room: name, exists: false };
+        if (room) {
+            response.exists = true;
+            response.meta = room.meta;
+        }
+
+        this.send(ws, response);
+    }
+
+    createRoom(name, owner, meta) {
+        const room = new Room(name, owner, meta);
         this.rooms.set(name, room);
         this.checkRoom(name);
         return room;

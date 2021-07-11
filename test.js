@@ -4,9 +4,19 @@ import { Server } from './server.js';
 describe('server', function() {
     this.timeout(1000);
 
-    const server = new Server();
-    const address = 'ws://127.0.0.1:' + server.port;
-    server.start();
+    let server = null;
+    let address = null;
+
+    beforeEach(function() {
+        server = new Server();
+        server.start();
+
+        address = 'ws://127.0.0.1:' + server.port;
+    });
+
+    afterEach(function() {
+        server.stop();
+    });
 
     it('should be able to connect', function(done) {
         const ws = new WebSocket(address);
@@ -26,7 +36,7 @@ describe('server', function() {
         });
     });
 
-    it('should do room selection', function(done) {
+    it('should handle room selection', function(done) {
         const type = 'room';
         const room = 'home';
         const expected = { type, room };
@@ -41,7 +51,7 @@ describe('server', function() {
         });
     });
 
-    it('should do room broadcast', function(done) {
+    it('should broadcast talk message in the room', function(done) {
         const alice = new WebSocket(address);
         const bob = new WebSocket(address);
 
@@ -85,7 +95,25 @@ describe('server', function() {
         });
     });
 
-    after(function() {
-        server.stop();
+    it('should handle check room message', function(done) {
+        const meta = { test: true };
+        server.createRoom('room2', 'owner1', meta);
+
+        const ws = new WebSocket(address);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({ type: 'check', room: 'room1' }));
+            ws.send(JSON.stringify({ type: 'check', room: 'room2' }));
+        });
+
+        let expected = [
+            { type: 'check', room: 'room1', exists: false },
+            { type: 'check', room: 'room2', exists: true, meta },
+        ];
+        ws.on('message', (content) => {
+            expected = expected.filter((e) => content !== JSON.stringify(e));
+            if (expected.length == 0) {
+                done();
+            }
+        });
     });
 });
