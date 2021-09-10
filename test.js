@@ -37,7 +37,7 @@ describe('server', function() {
         const expected = { message: 'welcome' };
         const ws = new WebSocket(pokerAddress);
         ws.on('message', (content) => {
-            if (content === JSON.stringify(expected)) {
+            if (content.toString() === JSON.stringify(expected)) {
                 return done();
             }
             return done(new Error('wrong welcome message'));
@@ -53,7 +53,7 @@ describe('server', function() {
             ws.send(JSON.stringify({ type, room }));
         });
         ws.on('message', (content) => {
-            if (content === JSON.stringify(expected)) {
+            if (content.toString() === JSON.stringify(expected)) {
                 return done();
             }
         });
@@ -86,17 +86,17 @@ describe('server', function() {
         };
 
         alice.on('message', (content) => {
-            if (content === enteredRoomMessage) {
+            if (content.toString() === enteredRoomMessage) {
                 aliceInRoom = true;
                 return onEnter();
             }
         });
         bob.on('message', (content) => {
-            if (content === enteredRoomMessage) {
+            if (content.toString() === enteredRoomMessage) {
                 bobInRoom = true;
                 return onEnter();
             }
-            const data = JSON.parse(content);
+            const data = JSON.parse(content.toString());
             if (data.type === 'talk' && data.message === aliceMessage) {
                 return done();
             }
@@ -118,7 +118,7 @@ describe('server', function() {
             { type: 'check', room: 'room2', exists: true, meta },
         ];
         ws.on('message', (content) => {
-            expected = expected.filter((e) => content !== JSON.stringify(e));
+            expected = expected.filter((e) => content.toString() !== JSON.stringify(e));
             if (expected.length == 0) {
                 done();
             }

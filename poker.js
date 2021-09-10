@@ -1,4 +1,4 @@
-import WebSocket from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 import EventEmitter from 'events';
 
@@ -47,7 +47,7 @@ export class Poker extends EventEmitter {
 
     start() {
         console.log('Poker listening on port ' + this.port);
-        this.wss = new WebSocket.Server({ port: this.port });
+        this.wss = new WebSocketServer({ port: this.port });
         this.wss.on('connection', (ws) => this.onConnection(ws));
         this.pingInterval = setInterval(() => this.pingEveryone(), CLIENT_PING);
     }
@@ -57,15 +57,19 @@ export class Poker extends EventEmitter {
         this.emit('connect', ws.client);
 
         ws.on('pong', () => ws.client.alive = true);
-        ws.on('message', (content) => this.onMessage(ws, content));
+        ws.on('message', (content, isBinary) => this.onMessage(ws, content, isBinary));
         ws.on('close', () => this.emit('disconnect', ws.client));
 
         this.send(ws, { message: 'welcome' });
     }
 
-    onMessage(ws, content) {
+    onMessage(ws, content, isBinary) {
+        if (isBinary) {
+            return;
+        }
+
         try {
-            const message = JSON.parse(content);
+            const message = JSON.parse(content.toString());
             if (message.type === 'talk') {
                 return this.handleTalk(ws, message);
             }
@@ -203,6 +207,9 @@ export class Poker extends EventEmitter {
 
         if (this.wss) {
             this.wss.close();
+            for (const ws of this.wss.clients) {
+                ws.terminate();
+            }
         }
     }
 }
