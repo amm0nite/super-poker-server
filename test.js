@@ -3,9 +3,12 @@
 import assert from 'assert';
 import WebSocket from 'ws';
 import axios from 'axios';
+import express from 'express';
+import bodyParser from 'body-parser';
 import parsePrometheusTextFormat from 'parse-prometheus-text-format';
 
-import { Server } from './server.js';
+import { Server } from './lib/server.js';
+import { Webhook } from './lib/webhook.js';
 
 describe('server', function() {
     this.timeout(1000);
@@ -176,5 +179,39 @@ describe('server', function() {
         server.poker.deleteRoom('room1');
         metrics = await getMetrics();
         assert.equal(metrics.room, 0);
+    });
+
+    it('should post the room events as webhooks', function(done) {
+        const webhookPort = 8082;
+        process.env.WEBHOOK_URL = `http://127.0.0.1:${webhookPort}/event`;
+        server.webhook = new Webhook();
+
+        const webhooks = [];
+
+        const app = express().post('/event', bodyParser.json(), (req, res) => {
+            webhooks.push(req.body);
+            return res.status(200).json(webhooks);
+        });
+
+        const createEvent = { event: 'create', name: 'room1' };
+        const deleteEvent = { event: 'delete', name: 'room1' };
+
+        const webhookServer = app.listen(webhookPort, (err) => {
+            if (err) done(err);
+
+            server.poker.createRoom(createEvent.name, 'owner1', {});
+            server.poker.deleteRoom(deleteEvent.name);
+
+            setTimeout(() => {
+                try {
+                    assert.strictEqual(webhooks.length, 2);
+                    assert.deepStrictEqual(webhooks.shift(), createEvent);
+                    assert.deepStrictEqual(webhooks.shift(), deleteEvent);
+                    done();
+                } finally {
+                    webhookServer.close();
+                }
+            }, 10);
+        });
     });
 });
