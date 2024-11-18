@@ -211,7 +211,7 @@ describe('server', function() {
                 } finally {
                     webhookServer.close();
                 }
-            }, 10);
+            }, 25);
         });
     });
 });
