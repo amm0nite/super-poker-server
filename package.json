@@ -25,13 +25,13 @@
     "express": "^4.22.1",
     "express-basic-auth": "^1.2.1",
     "prom-client": "^15.1.3",
-    "ws": "^8.19.0"
+    "ws": "^8.20.0"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
-    "eslint": "^8.57.1",
+    "eslint": "^10.1.0",
     "mocha": "^11.7.5",
     "parse-prometheus-text-format": "^1.1.1"
   }
