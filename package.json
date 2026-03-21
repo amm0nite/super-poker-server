@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "eslint": "eslint *.js",
+    "eslint": "eslint .",
     "test": "mocha test.js"
   },
   "repository": {
