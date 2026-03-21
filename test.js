@@ -142,9 +142,7 @@ describe('server', function() {
     }
 
     it('should count the clients', async function() {
-        let metrics = null;
-
-        metrics = await getMetrics();
+        let metrics = await getMetrics();
         assert.equal(metrics.client, 0);
 
         const ws = new WebSocket(pokerAddress);
@@ -167,9 +165,7 @@ describe('server', function() {
     });
 
     it('should count the rooms', async function() {
-        let metrics = null;
-
-        metrics = await getMetrics();
+        let metrics = await getMetrics();
         assert.equal(metrics.room, 0);
 
         server.poker.createRoom('room1', 'owner1', {});
